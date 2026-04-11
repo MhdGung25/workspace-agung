@@ -1,42 +1,46 @@
 import React, { useState } from 'react';
-import { db } from '../firebase';
+import { db } from '../firebase'; // Sesuaikan dengan lokasi file firebase.js kamu
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { useNavigate } from 'react-router-dom';
 
 export default function AddTask() {
   const navigate = useNavigate();
-  
+
   const [task, setTask] = useState('');
   const [subject, setSubject] = useState('');
   const [lecturer, setLecturer] = useState('');
   const [deadline, setDeadline] = useState('');
   const [loading, setLoading] = useState(false);
 
- const handleSubmit = async (e) => {
-  e.preventDefault();
-  if (!task.trim() || !deadline || !subject.trim()) return;
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!task.trim() || !deadline || !subject.trim()) return;
 
-  setLoading(true);
-  try {
-    // Menunggu Firestore mengonfirmasi data diterima
-    await addDoc(collection(db, 'tugas'), {
-      text: task,
-      subject: subject,
-      lecturer: lecturer || 'Tidak disebutkan',
-      dueDate: deadline,
-      createdAt: serverTimestamp(),
-      status: 'pending'
-    });
+    setLoading(true);
+    try {
+      // OPTIMALISASI OFFLINE: 
+      // Kita tidak menggunakan 'await' di sini supaya saat offline, 
+      // aplikasi tidak stuck di status "Loading" (menunggu respon server).
+      // Firestore secara cerdas akan menyimpannya di cache lokal dulu.
+      addDoc(collection(db, 'tugas'), {
+        text: task,
+        subject: subject,
+        lecturer: lecturer || 'Tidak disebutkan',
+        dueDate: deadline,
+        createdAt: serverTimestamp(),
+        status: 'pending'
+      });
 
-    // Pindah halaman hanya jika simpan BERHASIL
-    navigate('/todos'); 
-  } catch (error) {
-    console.error("Gagal simpan:", error);
-    alert("Gagal menyimpan data ke Firestore!");
-  } finally {
-    setLoading(false);
-  }
-};
+      // Langsung pindah halaman agar user merasa aplikasi sangat cepat/responsif
+      navigate('/todos'); 
+    } catch (error) {
+      console.error("Gagal simpan:", error);
+      alert("Gagal menyimpan tugas!");
+    } finally {
+      // Karena kita tidak pakai await, loading bisa langsung dimatikan
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="max-w-3xl mx-auto py-10 px-4 text-left">
@@ -47,43 +51,54 @@ export default function AddTask() {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Nama Tugas */}
           <div className="space-y-2">
             <label className="text-sm font-bold text-gray-700 ml-2 italic">Nama Tugas *</label>
             <input 
-              type="text" required
+              type="text" 
+              required
               className="w-full p-4 bg-gray-50 border-2 border-gray-100 rounded-2xl focus:border-[#f58220] focus:bg-white outline-none transition-all font-semibold"
               placeholder="Contoh: Membuat Laporan Praktikum"
-              value={task} onChange={(e) => setTask(e.target.value)}
+              value={task} 
+              onChange={(e) => setTask(e.target.value)}
             />
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Mata Kuliah */}
             <div className="space-y-2">
               <label className="text-sm font-bold text-gray-700 ml-2 italic">Mata Kuliah *</label>
               <input 
-                type="text" required
+                type="text" 
+                required
                 className="w-full p-4 bg-gray-50 border-2 border-gray-100 rounded-2xl focus:border-[#f58220] focus:bg-white outline-none transition-all font-semibold"
                 placeholder="Contoh: Pemrograman Web"
-                value={subject} onChange={(e) => setSubject(e.target.value)}
+                value={subject} 
+                onChange={(e) => setSubject(e.target.value)}
               />
             </div>
+            {/* Nama Dosen */}
             <div className="space-y-2">
               <label className="text-sm font-bold text-gray-700 ml-2 italic">Nama Dosen</label>
               <input 
                 type="text"
                 className="w-full p-4 bg-gray-50 border-2 border-gray-100 rounded-2xl focus:border-[#f58220] focus:bg-white outline-none transition-all font-semibold"
                 placeholder="Nama Pengampu"
-                value={lecturer} onChange={(e) => setLecturer(e.target.value)}
+                value={lecturer} 
+                onChange={(e) => setLecturer(e.target.value)}
               />
             </div>
           </div>
 
+          {/* Tenggat Waktu */}
           <div className="space-y-2">
             <label className="text-sm font-bold text-gray-700 ml-2 italic">Tenggat waktu *</label>
             <input 
-              type="date" required
+              type="date" 
+              required
               className="w-full p-4 bg-gray-50 border-2 border-gray-100 rounded-2xl focus:border-[#f58220] focus:bg-white outline-none transition-all font-semibold text-gray-600"
-              value={deadline} onChange={(e) => setDeadline(e.target.value)}
+              value={deadline} 
+              onChange={(e) => setDeadline(e.target.value)}
             />
           </div>
 
