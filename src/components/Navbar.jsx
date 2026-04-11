@@ -1,13 +1,11 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 
-// HAPUS BARIS INI:
-// import LogoIWU from '../assets/logo-iwu.png'; 
-
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const location = useLocation();
 
+  // Fungsi untuk mengecek apakah halaman sedang aktif
   const isActive = (path) => location.pathname === path;
 
   return (
@@ -18,7 +16,6 @@ export default function Navbar() {
           {/* LOGO & BRANDING */}
           <Link to="/" className="flex items-center gap-3 group">
             <img 
-              /* UBAH DI SINI: Langsung panggil path string-nya */
               src="/logo-iwu.png" 
               alt="Logo IWU" 
               className="h-12 w-auto object-contain transition-transform group-hover:scale-105"
@@ -33,12 +30,12 @@ export default function Navbar() {
             </div>
           </Link>
 
-          {/* ... sisa kode menu tetap sama ... */}
+          {/* DESKTOP MENU */}
           <div className="hidden md:flex items-center space-x-2">
             <Link 
               to="/" 
               className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${
-                isActive('/') ? 'text-[#7b2cbf] bg-purple-50' : 'text-gray-600 hover:text-[#7b2cbf] hover:bg-gray-50'
+                isActive('/') ? 'text-[#7b2cbf] bg-purple-50' : 'text-gray-600 hover:text-[#7b2cbf]'
               }`}
             >
               HOME
@@ -46,14 +43,16 @@ export default function Navbar() {
             <Link 
               to="/notes" 
               className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${
-                isActive('/notes') ? 'text-[#7b2cbf] bg-purple-50' : 'text-gray-600 hover:text-[#7b2cbf] hover:bg-gray-50'
+                isActive('/notes') ? 'text-[#7b2cbf] bg-purple-50' : 'text-gray-600 hover:text-[#7b2cbf]'
               }`}
             >
               CATATAN
             </Link>
             <Link 
               to="/todos" 
-              className="ml-2 bg-[#7b2cbf] text-white px-6 py-2.5 rounded-full text-sm font-bold hover:bg-[#6a1b9a] transition-all shadow-lg hover:shadow-purple-200 active:scale-95"
+              className={`ml-2 px-6 py-2.5 rounded-full text-sm font-bold transition-all shadow-lg active:scale-95 ${
+                isActive('/todos') ? 'bg-[#6a1b9a] text-white' : 'bg-[#7b2cbf] text-white hover:bg-[#6a1b9a]'
+              }`}
             >
               LIST TUGAS
             </Link>
@@ -64,6 +63,7 @@ export default function Navbar() {
             <button 
               onClick={() => setIsOpen(!isOpen)}
               className="text-[#7b2cbf] p-2 focus:outline-none"
+              aria-label="Toggle Menu"
             >
               <svg className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 {isOpen ? (
@@ -76,27 +76,41 @@ export default function Navbar() {
           </div>
         </div>
 
-        {/* MOBILE MENU DROPDOWN */}
+        {/* MOBILE MENU DROPDOWN (YANG DIPERBAIKI) */}
         {isOpen && (
-          <div className="md:hidden pb-6 pt-2 space-y-2 animate-fadeIn">
+          <div className="md:hidden pb-6 pt-2 space-y-2 animate-fadeIn transition-all">
             <Link 
               to="/" 
               onClick={() => setIsOpen(false)}
-              className="block px-4 py-3 rounded-xl text-base font-bold text-gray-700 bg-gray-50"
+              className={`block px-4 py-4 rounded-2xl text-base font-bold transition-all ${
+                isActive('/') 
+                ? 'bg-purple-100 text-[#7b2cbf] border-l-8 border-[#7b2cbf]' 
+                : 'bg-gray-50 text-gray-700'
+              }`}
             >
               🏠 Home
             </Link>
+            
             <Link 
               to="/notes" 
               onClick={() => setIsOpen(false)}
-              className="block px-4 py-3 rounded-xl text-base font-bold text-gray-700 bg-gray-50"
+              className={`block px-4 py-4 rounded-2xl text-base font-bold transition-all ${
+                isActive('/notes') 
+                ? 'bg-purple-100 text-[#7b2cbf] border-l-8 border-[#7b2cbf]' 
+                : 'bg-gray-50 text-gray-700'
+              }`}
             >
               📝 Catatan Kuliah
             </Link>
+            
             <Link 
               to="/todos" 
               onClick={() => setIsOpen(false)}
-              className="block px-4 py-3 rounded-xl text-base font-bold text-white bg-[#7b2cbf] shadow-md"
+              className={`block px-4 py-4 rounded-2xl text-base font-bold transition-all shadow-md ${
+                isActive('/todos') 
+                ? 'bg-[#6a1b9a] text-white ring-4 ring-purple-100' 
+                : 'bg-[#7b2cbf] text-white'
+              }`}
             >
               ✅ Daftar Tugas
             </Link>
