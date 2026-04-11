@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import LogoIWU from '../assets/logo-iwu.png';
+
+// HAPUS BARIS INI:
+// import LogoIWU from '../assets/logo-iwu.png'; 
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const location = useLocation();
 
-  // Fungsi untuk mengecek halaman aktif agar menu menyala
   const isActive = (path) => location.pathname === path;
 
   return (
@@ -17,7 +18,8 @@ export default function Navbar() {
           {/* LOGO & BRANDING */}
           <Link to="/" className="flex items-center gap-3 group">
             <img 
-              src={LogoIWU} 
+              /* UBAH DI SINI: Langsung panggil path string-nya */
+              src="/logo-iwu.png" 
               alt="Logo IWU" 
               className="h-12 w-auto object-contain transition-transform group-hover:scale-105"
             />
@@ -31,7 +33,7 @@ export default function Navbar() {
             </div>
           </Link>
 
-          {/* DESKTOP MENU (Muncul di Laptop) */}
+          {/* ... sisa kode menu tetap sama ... */}
           <div className="hidden md:flex items-center space-x-2">
             <Link 
               to="/" 
@@ -57,7 +59,7 @@ export default function Navbar() {
             </Link>
           </div>
 
-          {/* MOBILE HAMBURGER BUTTON (Muncul di HP) */}
+          {/* MOBILE HAMBURGER BUTTON */}
           <div className="md:hidden flex items-center">
             <button 
               onClick={() => setIsOpen(!isOpen)}
