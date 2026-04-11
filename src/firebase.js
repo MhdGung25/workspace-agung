@@ -5,7 +5,6 @@ import {
   persistentMultipleTabManager 
 } from "firebase/firestore";
 
-// Konfigurasi Firebase asli milikmu
 const firebaseConfig = {
   apiKey: "AIzaSyAhbibo1w7mtJtLiIjh3Ty4dNYkKUn3KcM",
   authDomain: "list-kampus.firebaseapp.com",
@@ -16,16 +15,14 @@ const firebaseConfig = {
   measurementId: "G-TZXDZ91FKK"
 };
 
-// 1. Inisialisasi Firebase App
+// Inisialisasi Firebase
 const app = initializeApp(firebaseConfig);
 
-// 2. Inisialisasi Firestore dengan fitur Offline standar terbaru (SDK v10+)
-// Ini akan menghilangkan warning "enableIndexedDbPersistence is deprecated"
+// Inisialisasi Firestore dengan Offline Capability (Versi SDK v10.x+)
 const db = initializeFirestore(app, {
   localCache: persistentLocalCache({
     tabManager: persistentMultipleTabManager()
   })
 });
 
-// 3. Export db agar bisa dipakai di TodoList.jsx dan Notes.jsx
 export { db };
