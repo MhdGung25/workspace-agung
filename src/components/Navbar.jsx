@@ -1,11 +1,27 @@
-import { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { auth } from '../firebase';
+import { onAuthStateChanged, signOut } from 'firebase/auth';
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
+  const [user, setUser] = useState(null);
   const location = useLocation();
+  const navigate = useNavigate();
 
-  // Fungsi untuk mengecek apakah halaman sedang aktif
+  // Monitor status login user
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  const handleLogout = async () => {
+    await signOut(auth);
+    navigate('/login');
+  };
+
   const isActive = (path) => location.pathname === path;
 
   return (
@@ -40,22 +56,41 @@ export default function Navbar() {
             >
               HOME
             </Link>
-            <Link 
-              to="/notes" 
-              className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${
-                isActive('/notes') ? 'text-[#7b2cbf] bg-purple-50' : 'text-gray-600 hover:text-[#7b2cbf]'
-              }`}
-            >
-              CATATAN
-            </Link>
-            <Link 
-              to="/todos" 
-              className={`ml-2 px-6 py-2.5 rounded-full text-sm font-bold transition-all shadow-lg active:scale-95 ${
-                isActive('/todos') ? 'bg-[#6a1b9a] text-white' : 'bg-[#7b2cbf] text-white hover:bg-[#6a1b9a]'
-              }`}
-            >
-              LIST TUGAS
-            </Link>
+
+            {/* Menu Terproteksi: Hanya muncul jika user login */}
+            {user ? (
+              <>
+                <Link 
+                  to="/notes" 
+                  className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${
+                    isActive('/notes') ? 'text-[#7b2cbf] bg-purple-50' : 'text-gray-600 hover:text-[#7b2cbf]'
+                  }`}
+                >
+                  CATATAN
+                </Link>
+                <Link 
+                  to="/todos" 
+                  className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${
+                    isActive('/todos') ? 'text-[#7b2cbf] bg-purple-50' : 'text-gray-600 hover:text-[#7b2cbf]'
+                  }`}
+                >
+                  LIST TUGAS
+                </Link>
+                <button 
+                  onClick={handleLogout}
+                  className="ml-4 px-5 py-2 rounded-full text-sm font-bold bg-gray-100 text-gray-600 hover:bg-red-50 hover:text-red-600 transition-all"
+                >
+                  LOGOUT
+                </button>
+              </>
+            ) : (
+              <Link 
+                to="/login" 
+                className="ml-2 px-6 py-2.5 rounded-full text-sm font-bold bg-[#7b2cbf] text-white hover:bg-[#6a1b9a] transition-all shadow-lg active:scale-95"
+              >
+                MASUK
+              </Link>
+            )}
           </div>
 
           {/* MOBILE HAMBURGER BUTTON */}
@@ -63,7 +98,6 @@ export default function Navbar() {
             <button 
               onClick={() => setIsOpen(!isOpen)}
               className="text-[#7b2cbf] p-2 focus:outline-none"
-              aria-label="Toggle Menu"
             >
               <svg className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 {isOpen ? (
@@ -76,44 +110,49 @@ export default function Navbar() {
           </div>
         </div>
 
-        {/* MOBILE MENU DROPDOWN (YANG DIPERBAIKI) */}
+        {/* MOBILE MENU DROPDOWN */}
         {isOpen && (
           <div className="md:hidden pb-6 pt-2 space-y-2 animate-fadeIn transition-all">
             <Link 
               to="/" 
               onClick={() => setIsOpen(false)}
-              className={`block px-4 py-4 rounded-2xl text-base font-bold transition-all ${
-                isActive('/') 
-                ? 'bg-purple-100 text-[#7b2cbf] border-l-8 border-[#7b2cbf]' 
-                : 'bg-gray-50 text-gray-700'
-              }`}
+              className={`block px-4 py-4 rounded-2xl text-base font-bold ${isActive('/') ? 'bg-purple-100 text-[#7b2cbf]' : 'bg-gray-50 text-gray-700'}`}
             >
               🏠 Home
             </Link>
             
-            <Link 
-              to="/notes" 
-              onClick={() => setIsOpen(false)}
-              className={`block px-4 py-4 rounded-2xl text-base font-bold transition-all ${
-                isActive('/notes') 
-                ? 'bg-purple-100 text-[#7b2cbf] border-l-8 border-[#7b2cbf]' 
-                : 'bg-gray-50 text-gray-700'
-              }`}
-            >
-              📝 Catatan Kuliah
-            </Link>
-            
-            <Link 
-              to="/todos" 
-              onClick={() => setIsOpen(false)}
-              className={`block px-4 py-4 rounded-2xl text-base font-bold transition-all shadow-md ${
-                isActive('/todos') 
-                ? 'bg-[#6a1b9a] text-white ring-4 ring-purple-100' 
-                : 'bg-[#7b2cbf] text-white'
-              }`}
-            >
-              ✅ Daftar Tugas
-            </Link>
+            {user ? (
+              <>
+                <Link 
+                  to="/notes" 
+                  onClick={() => setIsOpen(false)}
+                  className={`block px-4 py-4 rounded-2xl text-base font-bold ${isActive('/notes') ? 'bg-purple-100 text-[#7b2cbf]' : 'bg-gray-50 text-gray-700'}`}
+                >
+                  📝 Catatan Kuliah
+                </Link>
+                <Link 
+                  to="/todos" 
+                  onClick={() => setIsOpen(false)}
+                  className={`block px-4 py-4 rounded-2xl text-base font-bold ${isActive('/todos') ? 'bg-[#7b2cbf] text-white' : 'bg-gray-50 text-gray-700'}`}
+                >
+                  ✅ Daftar Tugas
+                </Link>
+                <button 
+                  onClick={() => { handleLogout(); setIsOpen(false); }}
+                  className="w-full text-left px-4 py-4 rounded-2xl text-base font-bold bg-red-50 text-red-600"
+                >
+                  🚪 Keluar Akun
+                </button>
+              </>
+            ) : (
+              <Link 
+                to="/login" 
+                onClick={() => setIsOpen(false)}
+                className="block px-4 py-4 rounded-2xl text-base font-bold bg-[#7b2cbf] text-white text-center shadow-md"
+              >
+                🔐 Masuk / Daftar
+              </Link>
+            )}
           </div>
         )}
       </div>

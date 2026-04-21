@@ -4,6 +4,7 @@ import {
   persistentLocalCache, 
   persistentMultipleTabManager 
 } from "firebase/firestore";
+import { getAuth } from "firebase/auth"; // 1. Tambahkan import Auth
 
 const firebaseConfig = {
   apiKey: "AIzaSyAhbibo1w7mtJtLiIjh3Ty4dNYkKUn3KcM",
@@ -18,11 +19,15 @@ const firebaseConfig = {
 // Inisialisasi Firebase
 const app = initializeApp(firebaseConfig);
 
-// Inisialisasi Firestore dengan Offline Capability (Versi SDK v10.x+)
+// 2. Inisialisasi Auth
+const auth = getAuth(app);
+
+// Inisialisasi Firestore dengan Offline Capability
 const db = initializeFirestore(app, {
   localCache: persistentLocalCache({
     tabManager: persistentMultipleTabManager()
   })
 });
 
-export { db };
+// 3. Export auth agar bisa dipakai di Login.jsx / Register.jsx
+export { db, auth };

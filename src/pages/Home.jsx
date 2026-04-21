@@ -1,77 +1,88 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { auth } from '../firebase'; 
+import { onAuthStateChanged } from 'firebase/auth';
 
 export default function Home() {
   const navigate = useNavigate();
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+    });
+    return () => unsubscribe();
+  }, []);
 
   return (
-    <div className="flex flex-col items-center">
+    <div className="flex flex-col items-center justify-center min-h-[85vh] bg-[#f8f9fd] px-4 overflow-hidden">
+      
       {/* HERO SECTION */}
-      <section className="flex flex-col items-center justify-center min-h-[60vh] text-center px-6 py-12 w-full">
-        <div className="inline-block px-4 py-1.5 mb-6 text-sm font-bold tracking-widest text-[#f58220] uppercase bg-orange-50 rounded-full border border-orange-100">
-          Informatics Student Tools
+      <section className="flex flex-col items-center text-center w-full max-w-5xl animate-fadeIn">
+        
+        {/* Badge Kampus - Responsif Text */}
+        <div className="inline-block px-4 py-2 mb-8 text-[10px] md:text-xs font-bold tracking-widest text-[#f58220] uppercase bg-orange-50 rounded-full border border-orange-100 shadow-sm">
+          Alat Bantu Mahasiswa Informatika
         </div>
         
-        <h2 className="text-4xl md:text-6xl font-black text-gray-900 mb-6 leading-tight max-w-3xl">
-          Atur Kuliah Jadi <span className="text-[#7b2cbf]">Lebih Mudah</span> & Terstruktur 🎓
-        </h2>
+        {/* Headline Utama - Ukuran teks adaptif untuk HP & Laptop */}
+        <h1 className="text-3xl md:text-6xl lg:text-7xl font-black text-gray-900 mb-6 leading-[1.2] tracking-tight">
+          Atur Kuliah Jadi <span className="text-[#7b2cbf]">Lebih <br className="md:hidden" /> Mudah</span> & Terstruktur 🎓
+        </h1>
         
-        <p className="text-gray-600 text-lg md:text-xl max-w-2xl mb-10 leading-relaxed">
-          Platform khusus mahasiswa IWU untuk menyimpan catatan materi dan daftar tugas di satu tempat. 
+        {/* Sub-headline */}
+        <p className="text-gray-500 text-base md:text-xl lg:text-2xl max-w-3xl mb-12 leading-relaxed font-medium">
+          Platform khusus pelajar IWU untuk menyimpan catatan materi dan daftar tugas di satu tempat. 
           Tetap produktif meski tanpa koneksi internet.
         </p>
         
-        <div className="flex flex-col sm:flex-row gap-4 w-full justify-center">
-          <button 
-            onClick={() => navigate('/notes')}
-            className="bg-[#7b2cbf] text-white px-8 py-4 rounded-2xl font-bold text-lg hover:bg-[#6a1b9a] transition-all shadow-xl shadow-purple-200 active:scale-95"
-          >
-            Mulai Mencatat
-          </button>
-          <button 
-            onClick={() => navigate('/todos')}
-            className="bg-white text-gray-700 border-2 border-gray-200 px-8 py-4 rounded-2xl font-bold text-lg hover:border-[#f58220] hover:text-[#f58220] transition-all active:scale-95"
-          >
-            Lihat Daftar Tugas
-          </button>
+        {/* BUTTON GROUP - Perbaikan Utama pada Bottom/Buttons */}
+        <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto justify-center items-center">
+          {user ? (
+            /* Tampilan Tombol Jika Sudah Login */
+            <>
+              <button 
+                onClick={() => navigate('/notes')}
+                className="w-full sm:w-60 bg-[#7b2cbf] text-white px-8 py-4 rounded-2xl font-bold text-lg hover:bg-[#6a1b9a] transition-all shadow-xl shadow-purple-200 active:scale-95"
+              >
+                Buka Catatan 📝
+              </button>
+              <button 
+                onClick={() => navigate('/todos')}
+                className="w-full sm:w-60 bg-white text-gray-700 border-2 border-gray-200 px-8 py-4 rounded-2xl font-bold text-lg hover:border-[#f58220] hover:text-[#f58220] transition-all active:scale-95"
+              >
+                Daftar Tugas ✅
+              </button>
+            </>
+          ) : (
+            /* Tampilan Tombol Jika Belum Login (Sesuai Referensi Gambar) */
+            <>
+              <>
+  <button
+    onClick={() => navigate('/login')}
+    className="w-full sm:w-72 md:w-80 bg-[#7b2cbf] text-white px-12 py-5 rounded-full font-bold text-xl md:text-2xl hover:bg-[#6a1b9a] transition-all duration-300 shadow-2xl shadow-purple-300 active:scale-95"
+  >
+    Masuk Sekarang
+  </button>
+
+  <button
+    onClick={() => navigate('/features')}
+    className="w-full sm:w-72 md:w-80 bg-white text-gray-700 border-2 border-gray-200 px-12 py-5 rounded-full font-bold text-xl md:text-2xl hover:shadow-xl transition-all duration-300 active:scale-95 flex items-center justify-center gap-3"
+  >
+    Pelajari Fitur ✨
+  </button>
+</>
+            </>
+          )}
         </div>
       </section>
 
-      {/* FEATURES SECTION (GRID) */}
-      <section className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full max-w-6xl px-6 pb-20">
-        {/* Fitur 1 */}
-        <div className="bg-white p-8 rounded-3xl border border-gray-100 shadow-sm hover:shadow-md transition-all group">
-          <div className="w-12 h-12 bg-purple-100 rounded-2xl flex items-center justify-center text-[#7b2cbf] mb-6 group-hover:bg-[#7b2cbf] group-hover:text-white transition-all">
-            <span className="text-2xl font-bold">📝</span>
-          </div>
-          <h4 className="text-xl font-bold text-gray-800 mb-2">Smart Notes</h4>
-          <p className="text-gray-500 text-sm leading-relaxed">
-            Simpan materi kuliah dengan format yang rapi dan mudah dicari saat masuk musim ujian.
-          </p>
-        </div>
-
-        {/* Fitur 2 */}
-        <div className="bg-white p-8 rounded-3xl border border-gray-100 shadow-sm hover:shadow-md transition-all group">
-          <div className="w-12 h-12 bg-orange-100 rounded-2xl flex items-center justify-center text-[#f58220] mb-6 group-hover:bg-[#f58220] group-hover:text-white transition-all">
-            <span className="text-2xl font-bold">✅</span>
-          </div>
-          <h4 className="text-xl font-bold text-gray-800 mb-2">Task Manager</h4>
-          <p className="text-gray-500 text-sm leading-relaxed">
-            Pantau deadline tugas kuliah agar tidak ada yang terlewat. Dilengkapi status pengerjaan.
-          </p>
-        </div>
-
-        {/* Fitur 3 */}
-        <div className="bg-white p-8 rounded-3xl border border-gray-100 shadow-sm hover:shadow-md transition-all group">
-          <div className="w-12 h-12 bg-blue-100 rounded-2xl flex items-center justify-center text-blue-600 mb-6 group-hover:bg-blue-600 group-hover:text-white transition-all">
-            <span className="text-2xl font-bold">🌐</span>
-          </div>
-          <h4 className="text-xl font-bold text-gray-800 mb-2">Offline Mode</h4>
-          <p className="text-gray-500 text-sm leading-relaxed">
-            Tetap bisa mencatat materi di dalam kelas meskipun sinyal kampus sedang tidak stabil.
-          </p>
-        </div>
-      </section>
+      {/* FOOTER INFO RINGKAS */}
+      <div className="mt-20 opacity-40 hidden md:block">
+        <p className="text-xs font-semibold tracking-widest text-gray-400 uppercase italic">
+          Informatics Student Project — IWU 2026
+        </p>
+      </div>
     </div>
   );
 }
