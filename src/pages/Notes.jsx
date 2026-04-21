@@ -23,7 +23,7 @@ export default function Notes() {
   const recognitionRef = useRef(null);
 
   useEffect(() => {
-    // 1. Pantau Status Login - Memastikan akun Agung tetap terhubung ke datanya
+    // 1. Pantau Status Login
     const unsubscribeAuth = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
       setLoading(false);
@@ -33,7 +33,7 @@ export default function Notes() {
     window.addEventListener('online', updateOnlineStatus);
     window.addEventListener('offline', updateOnlineStatus);
 
-    // Setup Speech Recognition (Id-ID)
+    // Setup Speech Recognition
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (SpeechRecognition) {
       const recognition = new SpeechRecognition();
@@ -63,14 +63,14 @@ export default function Notes() {
     };
   }, []);
 
-  // 2. Ambil Data Spesifik Milik User (Muhammad Agung)
+  // 2. Ambil Data Real-time (onSnapshot otomatis update UI)
   useEffect(() => {
     if (!user) {
       setNotes([]);
       return;
     }
 
-    // Filter Maut: Memastikan data lama tidak hilang & tidak tertukar
+    // Pastikan Indeks sudah dibuat di Firebase Console untuk: notes (userId: asc, createdAt: desc)
     const q = query(
       collection(db, 'notes'), 
       where('userId', '==', user.uid), 
@@ -78,9 +78,14 @@ export default function Notes() {
     );
 
     const unsubscribeNotes = onSnapshot(q, (snapshot) => {
-      setNotes(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+      const notesData = snapshot.docs.map(doc => ({ 
+        id: doc.id, 
+        ...doc.data() 
+      }));
+      setNotes(notesData);
     }, (err) => {
-      console.warn("Mode Offline: Menggunakan data cache.");
+      console.error("Firestore Error:", err);
+      // Jika muncul error "index requires", klik link yang muncul di console log browser
     });
 
     return () => unsubscribeNotes();
@@ -94,32 +99,35 @@ export default function Notes() {
 
   const saveNote = async (e) => {
     e.preventDefault();
-    if (!user) return alert("Silahkan login!");
-    if (!title.trim() || !content.trim()) return alert("⚠️ Isi semua kolom!");
+    if (!user) return alert("Silahkan login terlebih dahulu!");
+    if (!title.trim() || !content.trim()) return alert("⚠️ Mohon isi judul dan konten materi!");
 
     setSaving(true);
     try {
+      // PERBAIKAN: Menambahkan userId agar query filter di atas berhasil
       await addDoc(collection(db, 'notes'), {
-        userId: user.uid, // Data diikat ke akun Agung
+        userId: user.uid, 
         title: title.trim(),
         content: content.trim(),
         createdAt: serverTimestamp()
       });
+      
       setTitle('');
       setContent('');
     } catch (err) {
-      alert("Gagal menyimpan.");
+      console.error("Gagal simpan:", err);
+      alert("Gagal menyimpan catatan.");
     } finally {
       setSaving(false);
     }
   };
 
   const summarizeAI = async (id, text) => {
-    if (!isOnline) return alert("❌ Butuh internet!");
+    if (!isOnline) return alert("❌ Butuh koneksi internet untuk AI!");
     try {
       setIsSummarizing(id);
       const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-      const result = await model.generateContent(`Ringkas materi kuliah berikut menjadi poin-poin singkat: ${text}`);
+      const result = await model.generateContent(`Ringkas materi kuliah berikut menjadi poin-poin singkat dan jelas: ${text}`);
       const response = await result.response;
       alert(`✨ RINGKASAN AI:\n\n${response.text()}`);
     } catch (e) {
@@ -139,7 +147,7 @@ export default function Notes() {
     <div className="max-w-4xl mx-auto p-4 min-h-screen bg-gray-50 pb-20">
       {!isOnline && (
         <div className="bg-red-600 text-white p-3 rounded-2xl mb-6 text-center font-bold animate-pulse text-sm">
-          🔌 OFFLINE: Data akan disinkronkan otomatis nanti.
+          🔌 OFFLINE: Data akan disimpan lokal dan sinkron saat online.
         </div>
       )}
 
@@ -153,14 +161,14 @@ export default function Notes() {
         <form onSubmit={saveNote} className="space-y-6">
           <input 
             className="w-full p-4 bg-gray-50 rounded-2xl outline-none border-2 border-transparent focus:border-purple-500 focus:bg-white transition-all font-bold text-lg"
-            placeholder="Mata Kuliah" 
+            placeholder="Mata Kuliah (Contoh: Sistem Operasi)" 
             value={title} 
             onChange={e => setTitle(e.target.value)}
           />
           <div className="relative">
             <textarea 
               className="w-full p-5 bg-gray-50 rounded-2xl outline-none border-2 border-transparent focus:border-purple-500 focus:bg-white transition-all h-56 resize-none font-medium text-gray-700"
-              placeholder="Isi materi..." 
+              placeholder="Ketik atau gunakan mic untuk mencatat materi..." 
               value={content} 
               onChange={e => setContent(e.target.value)}
             />
@@ -171,7 +179,7 @@ export default function Notes() {
             </button>
           </div>
           <button disabled={saving} className={`w-full py-5 rounded-2xl font-black text-white shadow-xl transition-all ${saving ? 'bg-gray-300' : 'bg-[#7b2cbf] hover:bg-[#6a1b9a]'}`}>
-            {saving ? 'MENYIMPAN...' : 'SIMPAN KE ARSIP'}
+            {saving ? 'SEDANG MENYIMPAN...' : 'SIMPAN KE ARSIP'}
           </button>
         </form>
       </div>
@@ -200,7 +208,7 @@ export default function Notes() {
                   <button onClick={() => summarizeAI(note.id, note.content)} disabled={isSummarizing === note.id} className="bg-orange-50 text-orange-600 px-5 py-2.5 rounded-2xl text-xs font-black hover:bg-[#f58220] hover:text-white transition-all shadow-sm">
                     {isSummarizing === note.id ? '...' : '✨ RINGKAS'}
                   </button>
-                  <button onClick={() => { if(window.confirm('Hapus?')) deleteDoc(doc(db, 'notes', note.id)) }} className="text-gray-200 hover:text-red-500 transition-colors">
+                  <button onClick={() => { if(window.confirm('Hapus catatan ini?')) deleteDoc(doc(db, 'notes', note.id)) }} className="text-gray-200 hover:text-red-500 transition-colors">
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                     </svg>

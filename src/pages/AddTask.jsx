@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
-import { db } from '../firebase'; 
+import React, { useState, useEffect } from 'react';
+import { db, auth } from '../firebase'; // Import auth juga
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { useNavigate } from 'react-router-dom';
+import { onAuthStateChanged } from 'firebase/auth';
 
 export default function AddTask() {
   const navigate = useNavigate();
@@ -10,11 +11,27 @@ export default function AddTask() {
   const [subject, setSubject] = useState('');
   const [lecturer, setLecturer] = useState('');
   const [deadline, setDeadline] = useState('');
-  const [description, setDescription] = useState(''); // State baru untuk deskripsi
+  const [description, setDescription] = useState('');
   const [loading, setLoading] = useState(false);
+  const [user, setUser] = useState(null);
+
+  // 1. Pantau status login untuk mendapatkan UID user
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+    });
+    return () => unsubscribe();
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // Pastikan user sudah login sebelum simpan
+    if (!user) {
+      alert("Anda harus login untuk menambah tugas!");
+      return;
+    }
+
     // Validasi input wajib
     if (!task.trim() || !deadline || !subject.trim()) {
       alert("Mohon isi semua kolom yang bertanda bintang (*)");
@@ -23,23 +40,23 @@ export default function AddTask() {
 
     setLoading(true);
     try {
-      // Menambahkan data ke Firestore
-      // Tanpa 'await' agar sinkronisasi background berjalan (mendukung offline)
-      addDoc(collection(db, 'tugas'), {
+      // 2. Menambahkan data ke Firestore dengan userId
+      await addDoc(collection(db, 'tugas'), {
+        userId: user.uid, // SANGAT PENTING: Agar filter di TodoList.jsx bekerja
         text: task.trim(),
         subject: subject.trim(),
         lecturer: lecturer.trim() || 'Tidak disebutkan',
         dueDate: deadline,
-        description: description.trim() || 'Tidak ada catatan tambahan', // Simpan deskripsi
+        description: description.trim() || 'Tidak ada catatan tambahan',
         createdAt: serverTimestamp(),
         status: 'pending'
       });
 
-      // Navigasi instan untuk pengalaman pengguna yang cepat
+      // Navigasi setelah data benar-benar tersimpan
       navigate('/todos'); 
     } catch (error) {
       console.error("Gagal simpan:", error);
-      alert("Gagal menyimpan tugas!");
+      alert("Gagal menyimpan tugas! Periksa koneksi internet Anda.");
     } finally {
       setLoading(false);
     }
@@ -99,7 +116,7 @@ export default function AddTask() {
                 Nama Dosen
               </label>
               <input 
-                type="text"
+                type="text" 
                 className="w-full p-4 bg-gray-50 border-2 border-transparent rounded-2xl focus:border-[#7b2cbf] focus:bg-white outline-none transition-all font-bold placeholder:text-gray-300"
                 placeholder="Nama Pengampu"
                 value={lecturer} 
@@ -122,7 +139,7 @@ export default function AddTask() {
             />
           </div>
 
-          {/* Baris 4: Deskripsi Pengumpulan (Fitur Baru) */}
+          {/* Baris 4: Deskripsi Pengumpulan */}
           <div className="space-y-2">
             <label className="text-sm font-black text-gray-700 ml-2 uppercase tracking-wide">
               Deskripsi Pengumpulan
@@ -130,20 +147,17 @@ export default function AddTask() {
             <textarea 
               rows="3"
               className="w-full p-4 bg-gray-50 border-2 border-transparent rounded-2xl focus:border-[#f58220] focus:bg-white outline-none transition-all font-medium text-gray-700 placeholder:text-gray-300 resize-none"
-              placeholder="Contoh: Dikumpulkan minggu depan setelah UTS via Classroom menggunakan format PDF."
+              placeholder="Contoh: Dikumpulkan di Classroom dalam format PDF."
               value={description} 
               onChange={(e) => setDescription(e.target.value)}
             />
-            <p className="text-[11px] text-gray-400 ml-2 italic">
-              * Tambahkan info seperti metode pengumpulan atau jadwal spesifik.
-            </p>
           </div>
 
           {/* Action Buttons */}
           <div className="pt-6 flex flex-col sm:flex-row gap-4">
             <button 
               type="button"
-              className="flex-1 py-4.5 rounded-2xl font-black text-gray-400 border-2 border-gray-100 hover:bg-gray-50 hover:text-gray-600 transition-all uppercase tracking-widest text-sm"
+              className="flex-1 py-4 rounded-2xl font-black text-gray-400 border-2 border-gray-100 hover:bg-gray-50 hover:text-gray-600 transition-all uppercase tracking-widest text-sm"
               onClick={() => navigate('/todos')}
             >
               Batal
@@ -151,14 +165,9 @@ export default function AddTask() {
             <button 
               type="submit"
               disabled={loading}
-              className="flex-[2] bg-[#7b2cbf] text-white py-4.5 rounded-2xl font-black text-lg hover:bg-[#6a1b9a] transition-all shadow-xl shadow-purple-100 active:scale-95 disabled:bg-gray-300 uppercase tracking-tight"
+              className="flex-[2] bg-[#7b2cbf] text-white py-4 rounded-2xl font-black text-lg hover:bg-[#6a1b9a] transition-all shadow-xl shadow-purple-100 active:scale-95 disabled:bg-gray-300 uppercase tracking-tight"
             >
-              {loading ? (
-                <div className="flex items-center justify-center gap-2">
-                  <div className="w-5 h-5 border-3 border-white/30 border-t-white rounded-full animate-spin" />
-                  Menyimpan...
-                </div>
-              ) : 'Simpan Tugas'}
+              {loading ? "Menyimpan..." : 'Simpan Tugas'}
             </button>
           </div>
         </form>

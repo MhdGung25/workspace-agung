@@ -12,11 +12,10 @@ export default function TodoList() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // 1. Pantau Status Auth (Agar login otomatis terdeteksi)
+  // 1. Pantau Status Auth (Mengambil nama otomatis dari Firebase Auth)
   useEffect(() => {
     const unsubscribeAuth = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
-      // Loading hanya berhenti jika status auth sudah pasti (login/tidak)
       setLoading(false); 
     });
     return () => unsubscribeAuth();
@@ -29,8 +28,7 @@ export default function TodoList() {
       return;
     }
 
-    // Filter 'userId' memastikan Muhammad Agung melihat datanya sendiri
-    // dan user lain tidak bisa melihat data kamu.
+    // Hanya mengambil data milik user yang sedang login (Privasi Terjamin)
     const q = query(
       collection(db, 'tugas'), 
       where('userId', '==', user.uid), 
@@ -78,10 +76,9 @@ export default function TodoList() {
     return null;
   };
 
-  // State Loading saat aplikasi cek session login
   if (loading) return (
-    <div className="flex h-screen items-center justify-center font-black text-[#f58220] animate-pulse">
-      MEMUAT DAFTAR TUGAS...
+    <div className="flex h-screen items-center justify-center font-black text-[#f58220] animate-pulse tracking-widest uppercase">
+      Memuat Daftar Tugas...
     </div>
   );
 
@@ -89,14 +86,20 @@ export default function TodoList() {
     <div className="max-w-5xl mx-auto py-6 md:py-10 px-3 md:px-4 mb-20">
       <div className="bg-white rounded-[1.5rem] md:rounded-[2.5rem] shadow-2xl border-t-[8px] md:border-t-[12px] border-[#f58220] overflow-hidden">
         
-        {/* Header */}
+        {/* Header - Sekarang Otomatis Menampilkan Nama Pendaftar */}
         <div className="p-6 md:p-10 bg-gradient-to-br from-white to-orange-50 border-b border-gray-100 flex flex-col md:flex-row justify-between items-center gap-6">
           <div className="flex items-center gap-4 md:gap-5 w-full md:w-auto">
             <div className="bg-orange-100 p-3 md:p-4 rounded-2xl md:rounded-3xl text-3xl md:text-4xl shadow-inner">🚀</div>
             <div>
               <h2 className="text-2xl md:text-4xl font-black text-gray-900 uppercase tracking-tighter leading-none">Informatics Tasks</h2>
               <p className="text-sm md:text-base text-gray-500 font-medium italic mt-1">
-                {user ? `Halo ${user.displayName || 'Agung'}, tetap semangat!` : 'Silahkan login terlebih dahulu.'}
+                {user ? (
+                  <>
+                    Halo <span className="text-[#f58220] font-bold">{user.displayName || 'Mahasiswa'}</span>, tetap semangat!
+                  </>
+                ) : (
+                  'Silahkan login untuk mengelola tugas.'
+                )}
               </p>
             </div>
           </div>
@@ -112,12 +115,12 @@ export default function TodoList() {
           <div className="grid gap-4 md:gap-6">
             {!user ? (
               <div className="text-center py-16 bg-white rounded-[2rem] border-2 border-dashed border-gray-100">
-                 <p className="text-gray-400 font-bold">Akses dibatasi. Silahkan login.</p>
+                 <p className="text-gray-400 font-bold">Akses dibatasi. Silahkan login untuk melihat tugas Anda.</p>
               </div>
             ) : totalTasksCount === 0 ? (
               <div className="text-center py-16 md:py-24 bg-white rounded-[2rem] border-2 border-dashed border-gray-100 text-gray-300">
                 <div className="text-5xl md:text-6xl mb-4 opacity-50">☕</div>
-                <p className="text-sm md:text-xl font-black italic uppercase tracking-widest px-4 text-center">
+                <p className="text-sm md:text-xl font-black italic uppercase tracking-widest px-4">
                    Belum ada tugas. Klik "Tambah Tugas" untuk memulai!
                 </p>
               </div>
@@ -134,7 +137,7 @@ export default function TodoList() {
                           type="checkbox" 
                           checked={isDone}
                           onChange={() => toggleComplete(item.id, item.status)}
-                          className="w-6 h-6 md:w-8 md:h-8 rounded-lg md:rounded-xl border-2 border-gray-300 text-[#7b2cbf] focus:ring-[#7b2cbf] cursor-pointer"
+                          className="w-6 h-6 md:w-8 md:h-8 rounded-lg md:rounded-xl border-2 border-gray-300 text-[#7b2cbf] focus:ring-[#7b2cbf] cursor-pointer transition-all"
                         />
                       </div>
 
@@ -145,12 +148,12 @@ export default function TodoList() {
                           </span>
                           <div className="flex flex-wrap gap-2">
                             {!isDone && statusDeadline && (
-                              <span className={`text-[9px] md:text-[10px] font-black px-2.5 py-0.5 md:py-1 rounded-full ${statusDeadline.color}`}>
+                              <span className={`text-[9px] md:text-[10px] font-black px-2.5 py-0.5 md:py-1 rounded-full uppercase tracking-wider ${statusDeadline.color}`}>
                                 {statusDeadline.label}
                               </span>
                             )}
                             {isDone && (
-                              <span className="text-[9px] md:text-[10px] font-black bg-green-500 text-white px-2.5 py-0.5 md:py-1 rounded-full">✓ SELESAI</span>
+                              <span className="text-[9px] md:text-[10px] font-black bg-green-500 text-white px-2.5 py-0.5 md:py-1 rounded-full uppercase">✓ SELESAI</span>
                             )}
                           </div>
                         </div>
@@ -158,7 +161,7 @@ export default function TodoList() {
                         <div className="grid grid-cols-1 sm:flex sm:flex-wrap gap-x-5 gap-y-2 font-bold text-xs md:text-sm text-gray-600">
                           <span className="bg-orange-50 text-[#f58220] px-2 md:px-3 py-1 rounded-lg w-fit">📚 {item.subject || 'Mata Kuliah'}</span>
                           <span className="bg-gray-100 px-2 md:px-3 py-1 rounded-lg w-fit">👨‍🏫 {item.lecturer || 'Dosen'}</span>
-                          <span className="py-1 uppercase text-[10px] md:text-xs text-gray-400">📅 {item.dueDate}</span>
+                          <span className="py-1 uppercase text-[10px] md:text-xs text-gray-400">📅 DEADLINE: {item.dueDate}</span>
                         </div>
                       </div>
 
