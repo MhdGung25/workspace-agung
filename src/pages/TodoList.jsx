@@ -106,7 +106,7 @@ export default function TodoList() {
               <p className="text-xs md:text-sm text-gray-500 font-bold italic">
                 {user?.email === 'muhammadagung2003@gmail.com' 
                   ? "Akun Terverifikasi: " + user.email 
-                  : "Silahkan login dengan email yang benar."}
+                  : "Silahkan list tugas yang ingin Anda kerjakan."}
               </p>
             </div>
           </div>
